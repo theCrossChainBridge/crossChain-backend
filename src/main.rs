@@ -4,6 +4,8 @@ use chain::run;
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::accept_async;
 
+use futures_util::StreamExt;
+
 #[tokio::main]
 async fn main() {
     // 监听端口9000
@@ -16,10 +18,22 @@ async fn main() {
 }
 
 async fn handle_connection(stream: TcpStream) {
-    // 使用tokio-tungstenite库将TCP流升级为WebSocket流
+    // upgrade TCP to WebSocket
     let mut ws_stream = accept_async(stream)
         .await
         .expect("Error during the websocket handshake occurred");
-    // let (mut write, read) = ws_stream.split();
-    run(&mut ws_stream).await.unwrap();
+    while let Some(msg) = ws_stream.next().await {
+        match msg {
+            Ok(msg) => {
+                if msg.is_text() || msg.is_binary() {
+                    println!("{}", msg);
+                    run(&mut ws_stream, msg.to_string()).await.unwrap();
+                }
+            }
+            Err(e) => {
+                println!("Error: {}", e);
+                break;
+            }
+        }
+    }
 }

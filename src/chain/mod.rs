@@ -28,7 +28,7 @@ pub struct Net {
     pub mumbai: String,
 }
 
-pub async fn run(ws: &mut WebSocketStream<TcpStream>) -> eyre::Result<()> {
+pub async fn run(ws: &mut WebSocketStream<TcpStream>, msg: String) -> eyre::Result<()> {
     // Read the configuration file and deserialize it into a Conf struct
     let mut buf = BufReader::new(OpenOptions::new().read(true).open("config.toml")?);
     let mut conf = String::new();
@@ -65,18 +65,20 @@ pub async fn run(ws: &mut WebSocketStream<TcpStream>) -> eyre::Result<()> {
         let account: Address = event.account;
         let token_addr: Address = event.token_addr;
         let amount: U256 = event.amount;
+        let given_account = msg.parse::<Address>().unwrap();
 
-        let tx = matic_contract
-            .mint(account, token_addr, amount)
-            .send()
-            .await?
-            .log_msg("Pending hash")
-            .await?;
-        let matic_hash = tx.unwrap().transaction_hash;
-
-        ws.send(Message::Text(matic_hash.to_string()))
-            .await
-            .unwrap();
+        if account == given_account {
+            let tx = matic_contract
+                .mint(account, token_addr, amount)
+                .send()
+                .await?
+                .log_msg("Pending hash")
+                .await?;
+            let matic_hash = tx.unwrap().transaction_hash;
+            ws.send(Message::Text(format!("{:x}", matic_hash)))
+                .await
+                .unwrap();
+        }
     }
 
     Ok(())
