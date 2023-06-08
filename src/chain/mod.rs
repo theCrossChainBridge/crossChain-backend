@@ -10,7 +10,7 @@ use std::{
 };
 use tokio::net::TcpStream;
 use tokio_tungstenite::WebSocketStream;
-use tungstenite::Message;
+use tokio_tungstenite::tungstenite::protocol::Message;
 
 mod abi;
 use abi::Bridge;
