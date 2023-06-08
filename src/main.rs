@@ -9,8 +9,8 @@ use futures_util::StreamExt;
 #[tokio::main]
 async fn main() {
     // 监听端口9000
-    let listener = TcpListener::bind("127.0.0.1:9000").await.unwrap();
-    println!("WebSocket server running on ws://127.0.0.1:9000");
+    let listener = TcpListener::bind("0.0.0.0:9000").await.unwrap();
+    println!("WebSocket server running on 9000 port");
 
     while let Ok((stream, _)) = listener.accept().await {
         tokio::spawn(handle_connection(stream));
