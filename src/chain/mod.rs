@@ -9,8 +9,8 @@ use std::{
     sync::Arc,
 };
 use tokio::net::TcpStream;
-use tokio_tungstenite::WebSocketStream;
 use tokio_tungstenite::tungstenite::protocol::Message;
+use tokio_tungstenite::WebSocketStream;
 
 mod abi;
 use abi::Bridge;
@@ -59,7 +59,7 @@ pub async fn run(ws: &mut WebSocketStream<TcpStream>, msg: String) -> eyre::Resu
     let matic_contract = Bridge::new(matic_address, Arc::new(client));
 
     // Listen to the event stream and mint tokens on Matic network
-    while let Some(Ok((event, _meta))) = event_stream.next().await {
+    while let Some(Ok((event, meta))) = event_stream.next().await {
         println!("Stake Event: {event:?}");
 
         let account: Address = event.account;
@@ -75,9 +75,12 @@ pub async fn run(ws: &mut WebSocketStream<TcpStream>, msg: String) -> eyre::Resu
                 .log_msg("Pending hash")
                 .await?;
             let matic_hash = tx.unwrap().transaction_hash;
-            ws.send(Message::Text(format!("{:x}", matic_hash)))
-                .await
-                .unwrap();
+            ws.send(Message::Text(format!(
+                "{:x} {:x}",
+                meta.transaction_hash, matic_hash
+            )))
+            .await
+            .unwrap();
         }
     }
 
